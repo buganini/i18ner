@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# python3 xls-app.py dch.xls output/
+# python3 localization.py output/
 
 import os
 import sys
@@ -8,6 +8,7 @@ import xlrd
 import re
 from xml.sax.saxutils import escape as xml_escape
 import json
+import requests
 
 # https://github.com/translate/translate/blob/master/translate/storage/aresource.py#L219
 WHITESPACE = ' \n\t'  # Whitespace that we collapse.
@@ -338,7 +339,26 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 
 if __name__ == "__main__":
 	main_lang_key = "en"
-	lang_key = ["tw"]
+	lang_key = [
+		"tw",
+		"ja",
+		"ko",
+		"de",
+		"fr",
+		"nl",
+		"es",
+		"ru",
+		"th",
+		"vi",
+	]
 	skip_sheet = []
 
-	conv(sys.argv[1], sys.argv[2], sys.stdout, main_lang_key, lang_key, skip_sheet)
+	outdir = sys.argv[1]
+
+	gdoc = "https://docs.google.com/spreadsheets/d/1FDASCVNyga8KtwzxSj0PHwr7KyRrUKouwgexpfVYn2s/export?format=xlsx"
+	req = requests.get(gdoc)
+	f = os.path.join(outdir, "localization.xlsx")
+	fp = open(f, "wb")
+	fp.write(req.content)
+	fp.close()
+	conv(f, outdir, sys.stdout, main_lang_key, lang_key, skip_sheet)
