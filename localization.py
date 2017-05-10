@@ -297,7 +297,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 						aF[fk] = open(aPath, "w", encoding="utf-8")
 						aF[fk].write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n");
 
-					aF[fk].write("    <string name=\"{0}\">{1}</string>\n".format(aKey, aescape("".join(va))))
+					s = "".join(va)
+					if not s:
+						continue
+					aF[fk].write("    <string name=\"{0}\">{1}</string>\n".format(aKey, aescape(s)))
 
 				if iKey:
 					va = list(value)
@@ -328,7 +331,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 							os.makedirs(d)
 						iF[fk] = open(iPath, "w", encoding="utf-8")
 
-					iF[fk].write("\"{0}\" = \"{1}\";\n".format(iKey, iescape("".join(va))))
+					s = "".join(va)
+					if not s:
+						continue
+					iF[fk].write("\"{0}\" = \"{1}\";\n".format(iKey, iescape(s)))
 
 	for fk in aF:
 		aF[fk].write("</resources>\n");
