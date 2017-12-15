@@ -181,12 +181,12 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 
 	for sheet in reader.sheets():
 		for r in range(sheet.nrows):
-			aArg = sheet.get(r, android_arg_key).split(",")
+			aArg = [x.strip() for x in sheet.get(r, android_arg_key).split(",")]
 			if aArg:
 				sheet.set(r, android_arg_key, aArg)
 			else:
 				sheet.set(r, android_arg_key, [])
-			iArg = sheet.get(r, ios_arg_key).split(",")
+			iArg = [x.strip() for x in sheet.get(r, ios_arg_key).split(",")]
 			if iArg:
 				sheet.set(r, ios_arg_key, iArg)
 			else:
