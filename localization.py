@@ -10,6 +10,8 @@ from xml.sax.saxutils import escape as xml_escape
 import json
 import requests
 
+header_row = 0
+
 # https://github.com/translate/translate/blob/master/translate/storage/aresource.py#L219
 WHITESPACE = ' \n\t'  # Whitespace that we collapse.
 MULTIWHITESPACE = re.compile('[ \n\t]{2}(?!\\\\n)')
@@ -109,12 +111,12 @@ class Sheet():
 		self.number = i
 		self.name = name
 		self.sheet = sheet
-		self.nrows = sheet.nrows - 1
+		self.nrows = sheet.nrows - (header_row + 1)
 		self.ncols = sheet.ncols
 		self.cols = {}
 		self.dat = {}
 		for c in range(0, sheet.ncols):
-			value = strip_note(sheet.cell(0, c).value)
+			value = strip_note(sheet.cell(header_row, c).value)
 			self.cols[value] = c
 
 	def hasCol(self, c):
@@ -126,7 +128,7 @@ class Sheet():
 		except:
 			if type(c) is str:
 				if c in self.cols:
-					v = self.sheet.cell(r+1, self.cols[c]).value.strip()
+					v = self.sheet.cell(r + (header_row + 1), self.cols[c]).value.strip()
 					if v == "":
 						return default
 					else:
@@ -134,7 +136,7 @@ class Sheet():
 				else:
 					return default
 			else:
-				v = self.sheet.cell(r+1, c).value.strip()
+				v = self.sheet.cell(r + (header_row + 1), c).value.strip()
 				if v == "":
 					return default
 				else:
