@@ -362,6 +362,8 @@ if __name__ == "__main__":
 	skip_sheet = []
 
 	outdir = sys.argv[1]
+	if not os.path.exists(outdir):
+		os.makedirs(outdir)
 
 	gdoc = "https://docs.google.com/spreadsheets/d/1FDASCVNyga8KtwzxSj0PHwr7KyRrUKouwgexpfVYn2s/export?format=xlsx"
 	req = requests.get(gdoc)
