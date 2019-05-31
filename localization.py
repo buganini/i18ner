@@ -73,6 +73,14 @@ def iescape(s):
 def strip_note(s):
 	return re.sub(r"\([^()]*\)", "", s).strip()
 
+def yes_or_no(question):
+    while "the answer is invalid":
+        reply = str(input(question+' (y/n): ')).lower().strip()
+        if reply[0] == 'y':
+            return True
+        if reply[0] == 'n':
+            return False
+
 ref_key = "Ref Key"
 android_key = "Android"
 android_folder_key = "Android folder"
@@ -128,7 +136,7 @@ class Sheet():
 		except:
 			if type(c) is str:
 				if c in self.cols:
-					v = self.sheet.cell(r + (header_row + 1), self.cols[c]).value.strip()
+					v = self.sheet.cell(r+(header_row + 1), self.cols[c]).value.strip()
 					if v == "":
 						return default
 					else:
@@ -136,7 +144,7 @@ class Sheet():
 				else:
 					return default
 			else:
-				v = self.sheet.cell(r + (header_row + 1), c).value.strip()
+				v = self.sheet.cell(r+(header_row + 1), c).value.strip()
 				if v == "":
 					return default
 				else:
@@ -146,11 +154,16 @@ class Sheet():
 		self.dat[r,c] = v
 
 class Reader():
-	def __init__(self, infile, skip_sheet):
+	def __init__(self, infile, including_sheets):
 		self.xls = xlrd.open_workbook(infile)
+		if not including_sheets:
+			for sheet in self.xls.sheets():
+				if yes_or_no("Include {}?".format(sheet.name)):
+					including_sheets.append(sheet.name)
+
 		self._sheets = []
 		for i,sheet in enumerate(self.xls.sheets()):
-			if i in skip_sheet:
+			if not sheet.name in including_sheets:
 				continue
 			self._sheets.append(Sheet(i, sheet.name, sheet))
 
@@ -337,6 +350,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					if not s:
 						continue
 					iF[fk].write("\"{0}\" = \"{1}\";\n".format(iKey, iescape(s)))
+		print("Processed", sheet.name)
 
 	for fk in aF:
 		aF[fk].write("</resources>\n");
@@ -359,7 +373,7 @@ if __name__ == "__main__":
 		"th",
 		"vi",
 	]
-	skip_sheet = []
+	including_sheets = []
 
 	outdir = sys.argv[1]
 	if not os.path.exists(outdir):
@@ -371,4 +385,4 @@ if __name__ == "__main__":
 	fp = open(f, "wb")
 	fp.write(req.content)
 	fp.close()
-	conv(f, outdir, sys.stdout, main_lang_key, lang_key, skip_sheet)
+	conv(f, outdir, sys.stdout, main_lang_key, lang_key, including_sheets)
