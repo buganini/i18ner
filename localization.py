@@ -119,8 +119,8 @@ class Sheet():
 		self.number = i
 		self.name = name
 		self.sheet = sheet
-		self.nrows = sheet.max_row - (header_row + 1) - 1
-		self.ncols = sheet.max_column - 1
+		self.nrows = sheet.max_row - (header_row + 1)
+		self.ncols = sheet.max_column
 		self.cols = {}
 		self.dat = {}
 		for c in range(0, self.ncols):
