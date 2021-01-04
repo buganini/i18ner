@@ -4,7 +4,7 @@
 
 import os
 import sys
-import xlrd
+from openpyxl import load_workbook
 import re
 from xml.sax.saxutils import escape as xml_escape
 import json
@@ -119,12 +119,15 @@ class Sheet():
 		self.number = i
 		self.name = name
 		self.sheet = sheet
-		self.nrows = sheet.nrows - (header_row + 1)
-		self.ncols = sheet.ncols
+		self.nrows = sheet.max_row - (header_row + 1) - 1
+		self.ncols = sheet.max_column - 1
 		self.cols = {}
 		self.dat = {}
-		for c in range(0, sheet.ncols):
-			value = strip_note(sheet.cell(header_row, c).value)
+		for c in range(0, self.ncols):
+			if sheet.cell(header_row+1, c+1).value is None:
+				self.ncols = c
+				break
+			value = strip_note(sheet.cell(header_row+1, c+1).value)
 			self.cols[value] = c
 
 	def hasCol(self, c):
@@ -136,7 +139,7 @@ class Sheet():
 		except:
 			if type(c) is str:
 				if c in self.cols:
-					v = self.sheet.cell(r+(header_row + 1), self.cols[c]).value.strip()
+					v = (self.sheet.cell(r+(header_row + 1 + 1), self.cols[c] + 1).value or "").strip()
 					if v == "":
 						return default
 					else:
@@ -144,7 +147,7 @@ class Sheet():
 				else:
 					return default
 			else:
-				v = self.sheet.cell(r+(header_row + 1), c).value.strip()
+				v = (self.sheet.cell(r+(header_row + 1 + 1), c + 1).value or "").strip()
 				if v == "":
 					return default
 				else:
@@ -155,17 +158,17 @@ class Sheet():
 
 class Reader():
 	def __init__(self, infile, including_sheets):
-		self.xls = xlrd.open_workbook(infile)
+		self.xls = load_workbook(filename = infile)
 		if not including_sheets:
-			for sheet in self.xls.sheets():
-				if yes_or_no("Include {}?".format(sheet.name)):
-					including_sheets.append(sheet.name)
+			for sheet in [self.xls[n] for n in self.xls.sheetnames]:
+				if yes_or_no("Include {}?".format(sheet.title)):
+					including_sheets.append(sheet.title)
 
 		self._sheets = []
-		for i,sheet in enumerate(self.xls.sheets()):
-			if not sheet.name in including_sheets:
+		for i,sheet in enumerate([self.xls[n] for n in self.xls.sheetnames]):
+			if not sheet.title in including_sheets:
 				continue
-			self._sheets.append(Sheet(i, sheet.name, sheet))
+			self._sheets.append(Sheet(i, sheet.title, sheet))
 
 	def sheets(self):
 		return self._sheets
