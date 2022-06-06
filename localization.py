@@ -123,11 +123,10 @@ class Sheet():
 		self.ncols = sheet.max_column
 		self.cols = {}
 		self.dat = {}
+		while sheet.cell(header_row+1, self.ncols).value is None and self.ncols > 1:
+			self.ncols -= 1
 		for c in range(0, self.ncols):
-			if sheet.cell(header_row+1, c+1).value is None:
-				self.ncols = c
-				break
-			value = strip_note(sheet.cell(header_row+1, c+1).value)
+			value = strip_note(sheet.cell(header_row+1, c+1).value or "")
 			self.cols[value] = c
 
 	def hasCol(self, c):
