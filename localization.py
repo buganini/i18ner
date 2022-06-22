@@ -157,7 +157,7 @@ class Sheet():
 
 class Reader():
 	def __init__(self, infile, including_sheets):
-		self.xls = load_workbook(filename = infile)
+		self.xls = load_workbook(filename = infile, data_only=True)
 		if not including_sheets:
 			for sheet in [self.xls[n] for n in self.xls.sheetnames]:
 				if yes_or_no("Include {}?".format(sheet.title)):
