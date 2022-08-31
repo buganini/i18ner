@@ -11,6 +11,12 @@ import json
 import requests
 
 header_row = 0
+cursive_main_lang = False
+
+def cursive(s):
+	for p,q in zip("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ","𝒶𝒷𝒸𝒹𝑒𝒻𝑔𝒽𝒾𝒿𝓀𝓁𝓂𝓃𝑜𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏𝒜𝐵𝒞𝒟𝐸𝐹𝒢𝐻𝐼𝒥𝒦𝐿𝑀𝒩𝒪𝒫𝒬𝑅𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵"):
+		s = s.replace(p, q)
+	return s
 
 # https://github.com/translate/translate/blob/master/translate/storage/aresource.py#L219
 WHITESPACE = ' \n\t'  # Whitespace that we collapse.
@@ -298,6 +304,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					for i in range(0, len(va), 2):
 						va[i] = va[i].replace("%", "%%")
 
+					if lang == main_lang_key and cursive_main_lang:
+						for i in range(0, len(va), 2):
+							va[i] = cursive(va[i])
+
 					file = sheet.get(r, android_file_key, android_default_name)
 
 					if lang == main_lang_key:
@@ -336,6 +346,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 							outlog.write("[Error] Unexpected variable {0} for iOS key {1} in language {2} at sheet {3}\n".format(va[i], iKey, lang, sheet.name))
 					for i in range(0, len(va), 2):
 						va[i] = va[i].replace("%", "%%")
+
+					if lang == main_lang_key and cursive_main_lang:
+						for i in range(0, len(va), 2):
+							va[i] = cursive(va[i])
 
 					file = sheet.get(r, ios_file_key, ios_default_name)
 
