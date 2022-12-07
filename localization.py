@@ -285,6 +285,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					continue
 
 				if aKey:
+					# translate formatter
 					va = list(value)
 					for i in range(1, len(va), 2):
 						if not va[i]:
@@ -299,6 +300,8 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 							va[i] = "%{0}${1}".format(ai+1, arg)
 						else:
 							outlog.write("[Error] Unexpected variable {0} for Android key {1} in language {2} at sheet {3}\n".format(va[i], aKey, lang, sheet.name))
+
+					# escape data
 					for i in range(0, len(va), 2):
 						va[i] = va[i].replace("%", "%%")
 
@@ -328,6 +331,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					aF[fk].write("    <string name=\"{0}\">{1}</string>\n".format(aKey, aescape(s)))
 
 				if iKey:
+					# translate formatter
 					va = list(value)
 					for i in range(1, len(va), 2):
 						if not va[i]:
@@ -342,6 +346,8 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 							va[i] = "%{0}${1}".format(ai+1, arg)
 						else:
 							outlog.write("[Error] Unexpected variable {0} for iOS key {1} in language {2} at sheet {3}\n".format(va[i], iKey, lang, sheet.name))
+
+					# escape data
 					for i in range(0, len(va), 2):
 						va[i] = va[i].replace("%", "%%")
 
@@ -367,6 +373,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 
 				if jKey:
 					va = list(value)
+					for i in range(1, len(va), 2):
+						if not va[i]:
+							continue
+						va[i] = "{{{{{}}}}}".format(va[i])
 
 					if lang == main_lang_key and cursive_main_lang:
 						for i in range(0, len(va), 2):
