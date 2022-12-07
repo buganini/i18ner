@@ -82,6 +82,8 @@ ios_file_key = "iOS file"
 ios_arg_key = "iOS arg"
 ios_default_name = "Localizable"
 json_key = "JSON"
+json_file_key = "JSON file"
+json_default_name = "i18n"
 
 base_ios_locale_map = {"tw":"zh-Hant", "cn":"zh-Hans", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv"}
 android_locale_map = {"tw":"zh-rTW", "cn":"zh-rCN", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv", "pt-BR":"pt-rBR"}
@@ -384,7 +386,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 
 					s = "".join(va)
 					jpath = [lang] + jKey.split(".")
-					cur = jData
+					file = sheet.get(r, json_file_key, json_default_name)
+					if not file in jData:
+						jData[file] = {}
+					cur = jData[file]
 					for k in jpath[:-1]:
 						if not k in cur:
 							cur[k] = {}
@@ -406,13 +411,13 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 	for fk in iF:
 		iF[fk].close()
 
-	if jData:
-		jPath = os.path.join(output_dir, "i18n.json")
+	for fn in jData:
+		jPath = os.path.join(output_dir, "{}.json".format(fn))
 		d = os.path.dirname(jPath)
 		if not os.path.exists(d):
 			os.makedirs(d)
 		with open(jPath, "w") as f:
-			json.dump(jData, f)
+			json.dump(jData[fn], f)
 
 if __name__ == "__main__":
 	main_lang_key = "en"
