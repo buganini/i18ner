@@ -378,7 +378,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					for i in range(1, len(va), 2):
 						if not va[i]:
 							continue
-						va[i] = "{{{{{}}}}}".format(va[i])
+						va[i] = "{{{}}}".format(va[i])
 
 					if lang == main_lang_key and cursive_main_lang:
 						for i in range(0, len(va), 2):
