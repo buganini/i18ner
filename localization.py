@@ -81,6 +81,7 @@ ios_key = "iOS"
 ios_file_key = "iOS file"
 ios_arg_key = "iOS arg"
 ios_default_name = "Localizable"
+json_key = "JSON"
 
 base_ios_locale_map = {"tw":"zh-Hant", "cn":"zh-Hans", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv"}
 android_locale_map = {"tw":"zh-rTW", "cn":"zh-rCN", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv", "pt-BR":"pt-rBR"}
@@ -163,10 +164,12 @@ class Reader():
 		return self._sheets
 
 def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip_sheet = []):
-	aF={}
-	iF={}
+	aF = {}
+	iF = {}
+	jData = {}
 	aKeys = set()
 	iKeys = set()
+	jKeys = set()
 	ios_locale_map = dict(base_ios_locale_map)
 	ios_locale_map[main_lang_key] = "Base"
 
@@ -177,6 +180,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 			outlog.write("[Error] Main language key column not found in sheet {0}\n".format(sheet.number))
 			return
 
+	# build refs map
 	ref_key_map = {}
 	for sheet in reader.sheets():
 		for r in range(sheet.nrows):
@@ -184,6 +188,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 			if value:
 				ref_key_map[value] = r
 
+	# fill blank args
 	for sheet in reader.sheets():
 		for r in range(sheet.nrows):
 			aArg = [x.strip() for x in sheet.get(r, android_arg_key).split(",")]
@@ -197,6 +202,8 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 			else:
 				sheet.set(r, ios_arg_key, [])
 
+
+	# tokenize args
 	for sheet in reader.sheets():
 		for r in range(sheet.nrows):
 			for lang in [main_lang_key] + lang_key:
@@ -204,6 +211,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 				tokens = re.split(ARGUMENT, value)
 				sheet.set(r, lang, tokens)
 
+	# args interpolation for refs
 	for sheet in reader.sheets():
 		for r in range(sheet.nrows):
 			for lang in [main_lang_key] + lang_key:
@@ -244,11 +252,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 				folder += "/"
 
 			aKey = sheet.get(r, android_key)
-			iKey = sheet.get(r, ios_key)
-
 			aArg = sheet.get(r, android_arg_key)
-			iArg = sheet.get(r, ios_arg_key)
-
 			if aKey:
 				kk = (folder, aKey)
 				if kk in aKeys:
@@ -256,12 +260,22 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 				else:
 					aKeys.add(kk)
 
+			iKey = sheet.get(r, ios_key)
+			iArg = sheet.get(r, ios_arg_key)
 			if iKey:
 				kk = iKey
 				if kk in iKeys:
 					outlog.write("[Warning] Duplicated iOS key: {0}\n".format(kk))
 				else:
 					iKeys.add(kk)
+
+			jKey = sheet.get(r, json_key)
+			if jKey:
+				kk = jKey
+				if kk in jKeys:
+					outlog.write("[Warning] Duplicated JSON key: {0}\n".format(kk))
+				else:
+					jKeys.add(kk)
 
 			for lang in [main_lang_key] + lang_key:
 				value = sheet.get(r, lang)
@@ -350,6 +364,23 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					if not s:
 						continue
 					iF[fk].write("\"{0}\" = \"{1}\";\n".format(iKey, iescape(s)))
+
+				if jKey:
+					va = list(value)
+
+					if lang == main_lang_key and cursive_main_lang:
+						for i in range(0, len(va), 2):
+							va[i] = cursive(va[i])
+
+					s = "".join(va)
+					jpath = [lang] + jKey.split(".")
+					cur = jData
+					for k in jpath[:-1]:
+						if not k in cur:
+							cur[k] = {}
+						cur = cur[k]
+					cur[jpath[-1]] = s
+
 		print("Processed", sheet.name)
 
 	for fk in aF:
@@ -358,6 +389,14 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 
 	for fk in iF:
 		iF[fk].close()
+
+	if jData:
+		jPath = os.path.join(output_dir, "i18n.json")
+		d = os.path.dirname(jPath)
+		if not os.path.exists(d):
+			os.makedirs(d)
+		with open(jPath, "w") as f:
+			json.dump(jData, f)
 
 if __name__ == "__main__":
 	main_lang_key = "en"
