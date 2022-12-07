@@ -50,22 +50,6 @@ def android_escape(text, quote_wrapping_whitespaces=True):
 		return '"%s"' % text
 	return text
 
-def split(pat, s):
-	ret = []
-	lastPos = 0
-	while True:
-		match = re.search(pat, s)
-		if match:
-			span = match.span()
-			span1 = match.span(1)
-			ret.append(s[lastPos:span[0]])
-			ret.append(s[span1[0]:span1[1]])
-			s = s[span[1]:]
-			lastPos = 0
-		else:
-			ret.append(s)
-			return ret
-
 def aescape(s):
 	s = xml_escape(s)
 	s = android_escape(s)
@@ -217,7 +201,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 		for r in range(sheet.nrows):
 			for lang in [main_lang_key] + lang_key:
 				value = sheet.get(r, lang)
-				tokens = split(ARGUMENT, value)
+				tokens = re.split(ARGUMENT, value)
 				sheet.set(r, lang, tokens)
 
 	for sheet in reader.sheets():
@@ -225,7 +209,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 			for lang in [main_lang_key] + lang_key:
 				tokens = sheet.get(r, lang)
 				for i, token in list(reversed(list(enumerate(tokens))))[0::2]:
-					va = split(BACKREF, token)
+					va = re.split(BACKREF, token)
 					for j,ref in list(reversed(list(enumerate(va))))[1::2]:
 						if ref in ref_key_map:
 							va = va[:j] + [Null()] + sheet.get(ref_key_map[ref], lang) + [Null()] + va[j+1:]
