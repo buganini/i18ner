@@ -378,8 +378,14 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					for k in jpath[:-1]:
 						if not k in cur:
 							cur[k] = {}
-						cur = cur[k]
-					cur[jpath[-1]] = s
+						if type(cur) is dict:
+							cur = cur[k]
+						else:
+							outlog.write("[Error] key conflict for JSON key {0} at sheet {1}\n".format(jKey, sheet.name))
+					if type(cur) is dict:
+						cur[jpath[-1]] = s
+					else:
+						outlog.write("[Error] key conflict for JSON key {0} at sheet {1}\n".format(jKey, sheet.name))
 
 		print("Processed", sheet.name)
 
