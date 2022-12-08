@@ -84,6 +84,9 @@ ios_default_name = "Localizable"
 json_key = "JSON"
 json_file_key = "JSON file"
 json_default_name = "i18n"
+py_key = "Python"
+py_file_key = "Python file"
+py_default_name = "i18n"
 
 base_ios_locale_map = {"tw":"zh-Hant", "cn":"zh-Hans", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv"}
 android_locale_map = {"tw":"zh-rTW", "cn":"zh-rCN", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv", "pt-BR":"pt-rBR"}
@@ -169,9 +172,11 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 	aF = {}
 	iF = {}
 	jData = {}
+	pData = {}
 	aKeys = set()
 	iKeys = set()
 	jKeys = set()
+	pKeys = set()
 	ios_locale_map = dict(base_ios_locale_map)
 	ios_locale_map[main_lang_key] = "Base"
 
@@ -279,12 +284,24 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 				else:
 					jKeys.add(kk)
 
+			pKey = sheet.get(r, py_key)
+			if pKey:
+				kk = pKey
+				if kk in pKeys:
+					outlog.write("[Warning] Duplicated Python key: {0}\n".format(kk))
+				else:
+					pKeys.add(kk)
+
 			for lang in [main_lang_key] + lang_key:
 				value = sheet.get(r, lang)
 				if not value:
 					continue
 				if len(value)==1 and not value[0]:
 					continue
+
+				if lang == main_lang_key and cursive_main_lang:
+					for i in range(0, len(value), 2):
+						value[i] = cursive(value[i])
 
 				if aKey:
 					# translate formatter
@@ -306,10 +323,6 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					# escape data
 					for i in range(0, len(va), 2):
 						va[i] = va[i].replace("%", "%%")
-
-					if lang == main_lang_key and cursive_main_lang:
-						for i in range(0, len(va), 2):
-							va[i] = cursive(va[i])
 
 					file = sheet.get(r, android_file_key, android_default_name)
 
@@ -353,10 +366,6 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					for i in range(0, len(va), 2):
 						va[i] = va[i].replace("%", "%%")
 
-					if lang == main_lang_key and cursive_main_lang:
-						for i in range(0, len(va), 2):
-							va[i] = cursive(va[i])
-
 					file = sheet.get(r, ios_file_key, ios_default_name)
 
 					iLang = ios_locale_map.get(lang, lang)
@@ -380,10 +389,6 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 							continue
 						va[i] = "{{{}}}".format(va[i])
 
-					if lang == main_lang_key and cursive_main_lang:
-						for i in range(0, len(va), 2):
-							va[i] = cursive(va[i])
-
 					s = "".join(va)
 					jpath = [lang] + jKey.split(".")
 					file = sheet.get(r, json_file_key, json_default_name)
@@ -402,6 +407,31 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					else:
 						outlog.write("[Error] key conflict for JSON key {0} at sheet {1}\n".format(jKey, sheet.name))
 
+				if pKey:
+					va = list(value)
+					for i in range(1, len(va), 2):
+						if not va[i]:
+							continue
+						va[i] = "{{{}}}".format(va[i])
+
+					s = "".join(va)
+					ppath = [lang, pKey]
+					file = sheet.get(r, py_file_key, py_default_name)
+					if not file in pData:
+						pData[file] = {}
+					cur = pData[file]
+					for k in ppath[:-1]:
+						if not k in cur:
+							cur[k] = {}
+						if type(cur) is dict:
+							cur = cur[k]
+						else:
+							outlog.write("[Error] key conflict for Python key {0} at sheet {1}\n".format(pKey, sheet.name))
+					if type(cur) is dict:
+						cur[ppath[-1]] = s
+					else:
+						outlog.write("[Error] key conflict for Python key {0} at sheet {1}\n".format(pKey, sheet.name))
+
 		print("Processed", sheet.name)
 
 	for fk in aF:
@@ -418,6 +448,16 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 			os.makedirs(d)
 		with open(jPath, "w") as f:
 			json.dump(jData[fn], f)
+
+	for fn in pData:
+		pPath = os.path.join(output_dir, "{}.py".format(fn))
+		d = os.path.dirname(pPath)
+		if not os.path.exists(d):
+			os.makedirs(d)
+		with open(pPath, "w") as f:
+			f.write("I18N = ")
+			f.write(repr(pData[fn]))
+			f.write("\n")
 
 if __name__ == "__main__":
 	main_lang_key = "en"
