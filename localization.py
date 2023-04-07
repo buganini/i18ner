@@ -598,7 +598,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 				if i+1 < len(xlfData[fn][k]):
 					x.tail = xlfData[fn][k][i+1]
 			target.tail = "\n"
-		outfile = f"xliff/message.{fn}.xlf"
+		outfile = f"xliff/messages.{fn}.xlf"
 		d = os.path.dirname(outfile)
 		if not os.path.exists(d):
 			os.makedirs(d)
