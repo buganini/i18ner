@@ -538,7 +538,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 		if not os.path.exists(d):
 			os.makedirs(d)
 		with open(jPath, "w", encoding="utf-8") as f:
-			json.dump(jData[fn], f, ensure_ascii=False)
+			json.dump(jData[fn], f, ensure_ascii=False, indent=4)
 
 	for fn in jsData:
 		jPath = os.path.join(output_dir, "jsons/{}.json".format(fn))
@@ -546,7 +546,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 		if not os.path.exists(d):
 			os.makedirs(d)
 		with open(jPath, "w", encoding="utf-8") as f:
-			json.dump(jsData[fn], f, ensure_ascii=False)
+			json.dump(jsData[fn], f, ensure_ascii=False, indent=4)
 
 	for fn in pData:
 		pPath = os.path.join(output_dir, "{}.py".format(fn))
