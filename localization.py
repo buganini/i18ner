@@ -9,6 +9,7 @@ import re
 from xml.sax.saxutils import escape as xml_escape
 import json
 import requests
+import unicodedata
 
 header_row = 0
 cursive_main_lang = False
@@ -17,6 +18,13 @@ def cursive(s):
 	for p,q in zip("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ","𝒶𝒷𝒸𝒹𝑒𝒻𝑔𝒽𝒾𝒿𝓀𝓁𝓂𝓃𝑜𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏𝒜𝐵𝒞𝒟𝐸𝐹𝒢𝐻𝐼𝒥𝒦𝐿𝑀𝒩𝒪𝒫𝒬𝑅𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵"):
 		s = s.replace(p, q)
 	return s
+
+def is_en(s):
+	for c in s:
+		if unicodedata.category(c) in ("Lo",):
+			# print(c, unicodedata.category(c))
+			return False
+	return True
 
 # https://github.com/translate/translate/blob/master/translate/storage/aresource.py#L219
 WHITESPACE = ' \n\t'  # Whitespace that we collapse.
@@ -344,6 +352,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					s = "".join(va)
 					if not s:
 						continue
+
+					if lang == "en" and not is_en(s):
+						outlog.write("[Warning] Non-English in EN string: Android/{0}: {1}\n".format(aKey, s))
+
 					aF[fk].write("    <string name=\"{0}\">{1}</string>\n".format(aKey, aescape(s)))
 
 				if iKey:
@@ -382,6 +394,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					s = "".join(va)
 					if not s:
 						continue
+
+					if lang == "en" and not is_en(s):
+						outlog.write("[Warning] Non-English in EN string: iOS/{0}: {1}\n".format(iKey, s))
+
 					iF[fk].write("\"{0}\" = \"{1}\";\n".format(iKey, iescape(s)))
 
 				if jKey:
@@ -392,6 +408,8 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 						va[i] = "{{{}}}".format(va[i])
 
 					s = "".join(va)
+					if lang == "en" and not is_en(s):
+						outlog.write("[Warning] Non-English in EN string: JSON/{0}: {1}\n".format(jKey, s))
 					jpath = [lang] + jKey.split(".")
 					file = sheet.get(r, json_file_key, json_default_name)
 					if not file in jData:
@@ -417,6 +435,8 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 						va[i] = "{{{}}}".format(va[i])
 
 					s = "".join(va)
+					if lang == "en" and not is_en(s):
+						outlog.write("[Warning] Non-English in EN string: Python/{0}: {1}\n".format(pKey, s))
 					ppath = [lang, pKey]
 					file = sheet.get(r, py_file_key, py_default_name)
 					if not file in pData:
