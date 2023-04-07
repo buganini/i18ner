@@ -513,7 +513,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 					for i in range(1, len(va), 2):
 						if not va[i]:
 							continue
-						va[i] = "{{{}}}".format(va[i])
+						va[i] = "{{{{{}}}}}".format(va[i])
 
 					s = "".join(va)
 					if lang == "en" and not is_en(s):
@@ -587,7 +587,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			target.set("state", "tranlsated")
 			target.text = xlfData[fn][k]
 			target.tail = "\n"
-		outfile = f"xliff/message.{fn}.xml"
+		outfile = f"xliff/message.{fn}.xlf"
 		d = os.path.dirname(outfile)
 		if not os.path.exists(d):
 			os.makedirs(d)
