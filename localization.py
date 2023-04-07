@@ -521,7 +521,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 					file = lang
 					if not file in xlfData:
 						xlfData[file] = {}
-					xlfData[file][xlfKey] = s
+					xlfData[file][xlfKey] = va
 
 		print("Processed", sheet.name)
 
@@ -581,11 +581,26 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			tu.text = "\n  "
 			tu.tail = "\n\n"
 			source = ET.SubElement(tu, "source")
-			source.text = xlfData[main_lang_key][k]
+			if len(xlfData[main_lang_key][k])==1:
+				source.text = xlfData[main_lang_key][k][0]
+			elif len(xlfData[main_lang_key][k])==3:
+				source.text = xlfData[main_lang_key][k][0]
+				x = ET.SubElement(source, "x")
+				x.set("id", "INTERPOLATION")
+				x.set("equiv-text", xlfData[main_lang_key][k][1])
+				x.tail = xlfData[main_lang_key][k][2]
 			source.tail = "\n  "
 			target = ET.SubElement(tu, "target")
-			target.set("state", "tranlsated")
-			target.text = xlfData[fn][k]
+			if len(xlfData[main_lang_key][k])==1:
+				target.text = xlfData[fn][k][0]
+			elif len(xlfData[main_lang_key][k])==3:
+				target.text = xlfData[fn][k][0]
+				x = ET.SubElement(target, "x")
+				x.set("id", "INTERPOLATION")
+				x.set("equiv-text", xlfData[fn][k][1])
+				x.tail = xlfData[fn][k][2]
+			else:
+				outlog.write(f"Unhandle XLIFF output {k}")
 			target.tail = "\n"
 		outfile = f"xliff/message.{fn}.xlf"
 		d = os.path.dirname(outfile)
