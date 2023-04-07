@@ -192,21 +192,23 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 
 	reader = Reader(input_path, skip_sheet)
 
+	sheets = []
 	for sheet in reader.sheets():
 		if not sheet.hasCol(main_lang_key):
-			outlog.write("[Error] Main language key column not found in sheet {0}\n".format(sheet.number))
-			return
+			outlog.write("[Error] Skipping sheet [{0}] {1} Main language key column not found\n".format(sheet.number, sheet.name))
+			continue
+		sheets.append(sheet)
 
 	# build refs map
 	ref_key_map = {}
-	for sheet in reader.sheets():
+	for sheet in sheets:
 		for r in range(sheet.nrows):
 			value = sheet.get(r, ref_key)
 			if value:
 				ref_key_map[value] = r
 
 	# fill blank args
-	for sheet in reader.sheets():
+	for sheet in sheets:
 		for r in range(sheet.nrows):
 			aArg = [x.strip() for x in sheet.get(r, android_arg_key).split(",")]
 			if aArg:
@@ -221,7 +223,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 
 
 	# tokenize args
-	for sheet in reader.sheets():
+	for sheet in sheets:
 		for r in range(sheet.nrows):
 			for lang in [main_lang_key] + lang_key:
 				value = sheet.get(r, lang)
@@ -229,7 +231,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 				sheet.set(r, lang, tokens)
 
 	# args interpolation for refs
-	for sheet in reader.sheets():
+	for sheet in sheets:
 		for r in range(sheet.nrows):
 			for lang in [main_lang_key] + lang_key:
 				tokens = sheet.get(r, lang)
@@ -253,7 +255,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					tokens = tokens[:i] + va + tokens[i+1:]
 				sheet.set(r, lang, tokens)
 
-	for sheet in reader.sheets():
+	for sheet in sheets:
 		for r in range(sheet.nrows):
 			argIndex = {}
 			tokens = sheet.get(r, main_lang_key)
