@@ -321,8 +321,9 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 							outlog.write("[Error] Unexpected variable {0} for Android key {1} in language {2} at sheet {3}\n".format(va[i], aKey, lang, sheet.name))
 
 					# escape data
-					for i in range(0, len(va), 2):
-						va[i] = va[i].replace("%", "%%")
+					if not aArg == ["-"]:
+						for i in range(0, len(va), 2):
+							va[i] = va[i].replace("%", "%%")
 
 					file = sheet.get(r, android_file_key, android_default_name)
 
@@ -363,8 +364,9 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 							outlog.write("[Error] Unexpected variable {0} for iOS key {1} in language {2} at sheet {3}\n".format(va[i], iKey, lang, sheet.name))
 
 					# escape data
-					for i in range(0, len(va), 2):
-						va[i] = va[i].replace("%", "%%")
+					if not iArg == ["-"]:
+						for i in range(0, len(va), 2):
+							va[i] = va[i].replace("%", "%%")
 
 					file = sheet.get(r, ios_file_key, ios_default_name)
 
