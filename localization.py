@@ -537,7 +537,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 		d = os.path.dirname(jPath)
 		if not os.path.exists(d):
 			os.makedirs(d)
-		with open(jPath, "w") as f:
+		with open(jPath, "w", encoding="utf-8") as f:
 			json.dump(jData[fn], f, ensure_ascii=False)
 
 	for fn in jsData:
@@ -545,7 +545,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 		d = os.path.dirname(jPath)
 		if not os.path.exists(d):
 			os.makedirs(d)
-		with open(jPath, "w") as f:
+		with open(jPath, "w", encoding="utf-8") as f:
 			json.dump(jsData[fn], f, ensure_ascii=False)
 
 	for fn in pData:
@@ -553,7 +553,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 		d = os.path.dirname(pPath)
 		if not os.path.exists(d):
 			os.makedirs(d)
-		with open(pPath, "w") as f:
+		with open(pPath, "w", encoding="utf-8") as f:
 			f.write("I18N = ")
 			f.write(repr(pData[fn]))
 			f.write("\n")
