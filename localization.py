@@ -10,6 +10,7 @@ from xml.sax.saxutils import escape as xml_escape
 import json
 import requests
 import unicodedata
+import xml.etree.ElementTree as ET
 
 header_row = 0
 cursive_main_lang = False
@@ -98,6 +99,7 @@ jsons_key = "JSONS"
 py_key = "Python"
 py_file_key = "Python file"
 py_default_name = "i18n"
+xliff_key = "XLIFF"
 
 base_ios_locale_map = {"tw":"zh-Hant", "cn":"zh-Hans", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv"}
 android_locale_map = {"tw":"zh-rTW", "cn":"zh-rCN", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv", "pt-BR":"pt-rBR"}
@@ -185,11 +187,13 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 	jData = {}
 	jsData = {}
 	pData = {}
+	xlfData = {}
 	aKeys = set()
 	iKeys = set()
 	jKeys = set()
 	jsKeys = set()
 	pKeys = set()
+	xlfKeys = set()
 	ios_locale_map = dict(base_ios_locale_map)
 	ios_locale_map[main_lang_key] = "Base"
 
@@ -314,6 +318,14 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 					outlog.write("[Warning] Duplicated Python key: {0}\n".format(kk))
 				else:
 					pKeys.add(kk)
+
+			xlfKey = sheet.get(r, xliff_key)
+			if xlfKey:
+				kk = xlfKey
+				if kk in xlfKeys:
+					outlog.write("[Warning] Duplicated XLIFF key: {0}\n".format(kk))
+				else:
+					xlfKeys.add(kk)
 
 			for lang in [main_lang_key] + lang_key:
 				value = sheet.get(r, lang)
@@ -496,6 +508,21 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 					else:
 						outlog.write("[Error] key conflict for Python key {0} at sheet {1}\n".format(pKey, sheet.name))
 
+				if xlfKey:
+					va = list(value)
+					for i in range(1, len(va), 2):
+						if not va[i]:
+							continue
+						va[i] = "{{{}}}".format(va[i])
+
+					s = "".join(va)
+					if lang == "en" and not is_en(s):
+						outlog.write("[Warning] Non-English in EN string: XLIFF/{0}: {1}\n".format(xlfKey, s))
+					file = lang
+					if not file in xlfData:
+						xlfData[file] = {}
+					xlfData[file][xlfKey] = s
+
 		print("Processed", sheet.name)
 
 	for fk in aF:
@@ -530,6 +557,42 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			f.write("I18N = ")
 			f.write(repr(pData[fn]))
 			f.write("\n")
+
+	for fn in xlfData:
+		xliff = ET.Element('xliff')
+		xliff.set("version", "1.2")
+		xliff.set("xmlns", "urn:oasis:names:tc:xliff:document:1.2")
+		xliff.text = "\n"
+		xliff.tail = "\n"
+		file = ET.SubElement(xliff, 'file')
+		file.set("source-language", "raw")
+		file.set("datatype", "plaintext")
+		file.set("original", "ng2.template")
+		file.set("target-language", fn)
+		file.text = "\n"
+		file.tail = "\n"
+		body = ET.SubElement(file, 'body')
+		body.text = "\n\n"
+		body.tail = "\n"
+		for k in xlfData[fn]:
+			tu = ET.SubElement(body, "trans-unit")
+			tu.set("id", k)
+			tu.set("datatype", "html")
+			tu.text = "\n  "
+			tu.tail = "\n\n"
+			source = ET.SubElement(tu, "source")
+			source.text = xlfData[main_lang_key][k]
+			source.tail = "\n  "
+			target = ET.SubElement(tu, "target")
+			target.set("state", "tranlsated")
+			target.text = xlfData[fn][k]
+			target.tail = "\n"
+		outfile = f"xliff/message.{lang}.xml"
+		d = os.path.dirname(outfile)
+		if not os.path.exists(d):
+			os.makedirs(d)
+		with open(outfile, "wb") as f:
+		    f.write(ET.tostring(xliff, encoding="utf-8", xml_declaration=True))
 
 if __name__ == "__main__":
 	main_lang_key = "en"
