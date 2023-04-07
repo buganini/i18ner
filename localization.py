@@ -94,6 +94,7 @@ ios_default_name = "Localizable"
 json_key = "JSON"
 json_file_key = "JSON file"
 json_default_name = "i18n"
+jsons_key = "JSONS"
 py_key = "Python"
 py_file_key = "Python file"
 py_default_name = "i18n"
@@ -178,19 +179,21 @@ class Reader():
 	def sheets(self):
 		return self._sheets
 
-def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip_sheet = []):
+def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], including_sheets = []):
 	aF = {}
 	iF = {}
 	jData = {}
+	jsData = {}
 	pData = {}
 	aKeys = set()
 	iKeys = set()
 	jKeys = set()
+	jsKeys = set()
 	pKeys = set()
 	ios_locale_map = dict(base_ios_locale_map)
 	ios_locale_map[main_lang_key] = "Base"
 
-	reader = Reader(input_path, skip_sheet)
+	reader = Reader(input_path, including_sheets)
 
 	sheets = []
 	for sheet in reader.sheets():
@@ -295,6 +298,14 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					outlog.write("[Warning] Duplicated JSON key: {0}\n".format(kk))
 				else:
 					jKeys.add(kk)
+
+			jsKey = sheet.get(r, jsons_key)
+			if jsKey:
+				kk = jsKey
+				if kk in jsKeys:
+					outlog.write("[Warning] Duplicated JSONs key: {0}\n".format(kk))
+				else:
+					jsKeys.add(kk)
 
 			pKey = sheet.get(r, py_key)
 			if pKey:
@@ -431,6 +442,33 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 					else:
 						outlog.write("[Error] key conflict for JSON key {0} at sheet {1}\n".format(jKey, sheet.name))
 
+				if jsKey:
+					va = list(value)
+					for i in range(1, len(va), 2):
+						if not va[i]:
+							continue
+						va[i] = "{{{}}}".format(va[i])
+
+					s = "".join(va)
+					if lang == "en" and not is_en(s):
+						outlog.write("[Warning] Non-English in EN string: JSONs/{0}: {1}\n".format(jKey, s))
+					jpath = jsKey.split(".")
+					file = lang
+					if not file in jsData:
+						jsData[file] = {}
+					cur = jsData[file]
+					for k in jpath[:-1]:
+						if not k in cur:
+							cur[k] = {}
+						if type(cur) is dict:
+							cur = cur[k]
+						else:
+							outlog.write("[Error] key conflict for JSONs key {0} at sheet {1}\n".format(jKey, sheet.name))
+					if type(cur) is dict:
+						cur[jpath[-1]] = s
+					else:
+						outlog.write("[Error] key conflict for JSONs key {0} at sheet {1}\n".format(jKey, sheet.name))
+
 				if pKey:
 					va = list(value)
 					for i in range(1, len(va), 2):
@@ -468,12 +506,20 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], skip
 		iF[fk].close()
 
 	for fn in jData:
-		jPath = os.path.join(output_dir, "{}.json".format(fn))
+		jPath = os.path.join(output_dir, "json/{}.json".format(fn))
 		d = os.path.dirname(jPath)
 		if not os.path.exists(d):
 			os.makedirs(d)
 		with open(jPath, "w") as f:
 			json.dump(jData[fn], f)
+
+	for fn in jsData:
+		jPath = os.path.join(output_dir, "jsons/{}.json".format(fn))
+		d = os.path.dirname(jPath)
+		if not os.path.exists(d):
+			os.makedirs(d)
+		with open(jPath, "w") as f:
+			json.dump(jsData[fn], f)
 
 	for fn in pData:
 		pPath = os.path.join(output_dir, "{}.py".format(fn))
