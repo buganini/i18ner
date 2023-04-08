@@ -189,14 +189,14 @@ def set_kv(data, path, value, outlog, ctx):
 		if isinstance(cur, dict):
 			cur = cur[k]
 		else:
-			outlog.write("[Error] key conflict for {0} key {1} at sheet {2}\n".format(*ctx))
+			outlog.write("\x1b[1;33m[WARN] key conflict for {0} key {1} at sheet {2}\x1b[m\n".format(*ctx))
 	if isinstance(cur, dict):
 		if path[-1] in cur and isinstance(cur[path[-1]], dict):
-			outlog.write("[Error] key prefix conflict for {0} key {1} at sheet {2}\n".format(*ctx))
+			outlog.write("\x1b[1;33m[WARN] key prefix conflict for {0} key {1} at sheet {2}\x1b[m\n".format(*ctx))
 		else:
 			cur[path[-1]] = value
 	else:
-		outlog.write("[Error] key conflict for {0} key {1} at sheet {2}\n".format(*ctx))
+		outlog.write("\x1b[1;33m[WARN] key conflict for {0} key {1} at sheet {2}\x1b[m\n".format(*ctx))
 
 def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], including_sheets = []):
 	aF = {}
@@ -220,7 +220,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 	sheets = []
 	for sheet in reader.sheets():
 		if not sheet.hasCol(main_lang_key):
-			outlog.write("[Error] Skipping sheet [{0}] {1} Main language key column not found\n".format(sheet.number, sheet.name))
+			outlog.write("\x1b[1;31m[ERROR] Skipping sheet [{0}] {1} Main language key column not found\x1b[m\n".format(sheet.number, sheet.name))
 			continue
 		sheets.append(sheet)
 
@@ -275,10 +275,13 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 									this_args = this_args[:i] + args + this_args[i+1:]
 									sheet.set(r, arg_key, this_args)
 						else:
-							outlog.write("[Error] Back reference {0} not found in language {1} at sheet {2}\n".format(ref, lang, sheet.name))
+							outlog.write("\x1b[1;31m[ERROR] Back reference {0} not found in language {1} at sheet {2}\x1b[m\n".format(ref, lang, sheet.name))
 							return
 					tokens = tokens[:i] + va + tokens[i+1:]
 				sheet.set(r, lang, tokens)
+
+	if not sheets:
+		outlog.write("\x1b[1;31m[ERROR] No Data\x1b[m\n")
 
 	for sheet in sheets:
 		for r in range(sheet.nrows):
@@ -300,7 +303,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			if aKey:
 				kk = (folder, aKey)
 				if kk in aKeys:
-					outlog.write("[Warning] Duplicated Android key: {0}\n".format(kk))
+					outlog.write("\x1b[1;33m[WARN] Duplicated Android key: {0}\x1b[m\n".format(kk))
 				else:
 					aKeys.add(kk)
 
@@ -309,7 +312,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			if iKey:
 				kk = iKey
 				if kk in iKeys:
-					outlog.write("[Warning] Duplicated iOS key: {0}\n".format(kk))
+					outlog.write("\x1b[1;33m[WARN] Duplicated iOS key: {0}\x1b[m\n".format(kk))
 				else:
 					iKeys.add(kk)
 
@@ -317,7 +320,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			if jKey:
 				kk = jKey
 				if kk in jKeys:
-					outlog.write("[Warning] Duplicated JSON key: {0}\n".format(kk))
+					outlog.write("\x1b[1;33m[WARN] Duplicated JSON key: {0}\x1b[m\n".format(kk))
 				else:
 					jKeys.add(kk)
 
@@ -325,7 +328,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			if jsKey:
 				kk = jsKey
 				if kk in jsKeys:
-					outlog.write("[Warning] Duplicated JSONs key: {0}\n".format(kk))
+					outlog.write("\x1b[1;33m[WARN] Duplicated JSONs key: {0}\x1b[m\n".format(kk))
 				else:
 					jsKeys.add(kk)
 
@@ -333,7 +336,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			if pKey:
 				kk = pKey
 				if kk in pKeys:
-					outlog.write("[Warning] Duplicated Python key: {0}\n".format(kk))
+					outlog.write("\x1b[1;33m[WARN] Duplicated Python key: {0}\x1b[m\n".format(kk))
 				else:
 					pKeys.add(kk)
 
@@ -341,7 +344,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 			if xlfKey:
 				kk = xlfKey
 				if kk in xlfKeys:
-					outlog.write("[Warning] Duplicated XLIFF key: {0}\n".format(kk))
+					outlog.write("\x1b[1;33m[WARN] Duplicated XLIFF key: {0}\x1b[m\n".format(kk))
 				else:
 					xlfKeys.add(kk)
 
@@ -367,11 +370,11 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 							if ai < len(aArg):
 								arg = aArg[ai]
 							else:
-								outlog.write("[Error] Sheet \"{0}\": Undefined arg for Android key: {1}[{2}]\n".format(sheet.name, aKey, va[i]))
+								outlog.write("\x1b[1;31m[ERROR] Sheet \"{0}\": Undefined arg for Android key: {1}[{2}]\x1b[m\n".format(sheet.name, aKey, va[i]))
 								return
 							va[i] = "%{0}${1}".format(ai+1, arg)
 						else:
-							outlog.write("[Error] Unexpected variable {0} for Android key {1} in language {2} at sheet {3}\n".format(va[i], aKey, lang, sheet.name))
+							outlog.write("\x1b[1;31m[ERROR] Unexpected variable {0} for Android key {1} in language {2} at sheet {3}\x1b[m\n".format(va[i], aKey, lang, sheet.name))
 
 					# escape data
 					if not aArg == ["-"]:
@@ -399,7 +402,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 						continue
 
 					if lang == "en" and not is_en(s):
-						outlog.write("[Warning] Non-English in EN string: Android/{0}: {1}\n".format(aKey, s))
+						outlog.write("\x1b[1;33m[WARN] Non-English in EN string: Android/{0}: {1}\x1b[m\n".format(aKey, s))
 
 					aF[fk].write("    <string name=\"{0}\">{1}</string>\n".format(aKey, aescape(s)))
 
@@ -414,11 +417,11 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 							if ai < len(iArg):
 								arg = iArg[ai]
 							else:
-								outlog.write("[Error] Sheet \"{0}\": Undefined arg for iOS key: {1}[{2}]\n".format(sheet.name, iKey, va[i]))
+								outlog.write("\x1b[1;31m[ERROR] Sheet \"{0}\": Undefined arg for iOS key: {1}[{2}]\x1b[m\n".format(sheet.name, iKey, va[i]))
 								return
 							va[i] = "%{0}${1}".format(ai+1, arg)
 						else:
-							outlog.write("[Error] Unexpected variable {0} for iOS key {1} in language {2} at sheet {3}\n".format(va[i], iKey, lang, sheet.name))
+							outlog.write("\x1b[1;31m[ERROR] Unexpected variable {0} for iOS key {1} in language {2} at sheet {3}\x1b[m\n".format(va[i], iKey, lang, sheet.name))
 
 					# escape data
 					if not iArg == ["-"]:
@@ -441,7 +444,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 						continue
 
 					if lang == "en" and not is_en(s):
-						outlog.write("[Warning] Non-English in EN string: iOS/{0}: {1}\n".format(iKey, s))
+						outlog.write("\x1b[1;33m[WARN] Non-English in EN string: iOS/{0}: {1}\x1b[m\n".format(iKey, s))
 
 					iF[fk].write("\"{0}\" = \"{1}\";\n".format(iKey, iescape(s)))
 
@@ -454,7 +457,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 
 					s = "".join(va)
 					if lang == "en" and not is_en(s):
-						outlog.write("[Warning] Non-English in EN string: JSON/{0}: {1}\n".format(jKey, s))
+						outlog.write("\x1b[1;33m[WARN] Non-English in EN string: JSON/{0}: {1}\x1b[m\n".format(jKey, s))
 					jpath = [lang] + jKey.split(".")
 					file = sheet.get(r, json_file_key, json_default_name)
 					if file=="*":
@@ -473,7 +476,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 
 					s = "".join(va)
 					if lang == "en" and not is_en(s):
-						outlog.write("[Warning] Non-English in EN string: JSONs/{0}: {1}\n".format(jKey, s))
+						outlog.write("\x1b[1;33m[WARN] Non-English in EN string: JSONs/{0}: {1}\x1b[m\n".format(jKey, s))
 					jpath = jsKey.split(".")
 					file = lang
 					if not file in jsData:
@@ -489,7 +492,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 
 					s = "".join(va)
 					if lang == "en" and not is_en(s):
-						outlog.write("[Warning] Non-English in EN string: Python/{0}: {1}\n".format(pKey, s))
+						outlog.write("\x1b[1;33m[WARN] Non-English in EN string: Python/{0}: {1}\x1b[m\n".format(pKey, s))
 					ppath = [lang, pKey]
 					file = sheet.get(r, py_file_key, py_default_name)
 					if not file in pData:
@@ -501,11 +504,11 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 						if type(cur) is dict:
 							cur = cur[k]
 						else:
-							outlog.write("[Error] key conflict for Python key {0} at sheet {1}\n".format(pKey, sheet.name))
+							outlog.write("\x1b[1;31m[ERROR] key conflict for Python key {0} at sheet {1}\x1b[m\n".format(pKey, sheet.name))
 					if type(cur) is dict:
 						cur[ppath[-1]] = s
 					else:
-						outlog.write("[Error] key conflict for Python key {0} at sheet {1}\n".format(pKey, sheet.name))
+						outlog.write("\x1b[1;31m[ERROR] key conflict for Python key {0} at sheet {1}\x1b[m\n".format(pKey, sheet.name))
 
 				if xlfKey:
 					va = list(value)
@@ -516,7 +519,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 
 					s = "".join(va)
 					if lang == "en" and not is_en(s):
-						outlog.write("[Warning] Non-English in EN string: XLIFF/{0}: {1}\n".format(xlfKey, s))
+						outlog.write("\x1b[1;33m[WARN] Non-English in EN string: XLIFF/{0}: {1}\x1b[m\n".format(xlfKey, s))
 					file = lang
 					if not file in xlfData:
 						xlfData[file] = {}
