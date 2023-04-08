@@ -73,14 +73,14 @@ def strip_note(s):
 	return re.sub(r"\([^()]*\)", "", s).strip()
 
 def yes_or_no(question):
-    while "the answer is invalid":
-        reply = str(input(question+' (y/n): ')).lower().strip()
-        if not reply:
-            continue
-        if reply[0] == 'y':
-            return True
-        if reply[0] == 'n':
-            return False
+	while "the answer is invalid":
+		reply = str(input(question+' (y/n): ')).lower().strip()
+		if not reply:
+			continue
+		if reply[0] == 'y':
+			return True
+		if reply[0] == 'n':
+			return False
 
 ref_key = "Ref Key"
 android_key = "Android"
@@ -181,9 +181,27 @@ class Reader():
 	def sheets(self):
 		return self._sheets
 
+def set_kv(data, path, value, outlog, ctx):
+	cur = data
+	for k in path[:-1]:
+		if not k in cur:
+			cur[k] = {}
+		if isinstance(cur, dict):
+			cur = cur[k]
+		else:
+			outlog.write("[Error] key conflict for {0} key {1} at sheet {2}\n".format(*ctx))
+	if isinstance(cur, dict):
+		if path[-1] in cur and isinstance(cur[path[-1]], dict):
+			outlog.write("[Error] key prefix conflict for {0} key {1} at sheet {2}\n".format(*ctx))
+		else:
+			cur[path[-1]] = value
+	else:
+		outlog.write("[Error] key conflict for {0} key {1} at sheet {2}\n".format(*ctx))
+
 def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], including_sheets = []):
 	aF = {}
 	iF = {}
+	commonJData = []
 	jData = {}
 	jsData = {}
 	pData = {}
@@ -439,20 +457,12 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 						outlog.write("[Warning] Non-English in EN string: JSON/{0}: {1}\n".format(jKey, s))
 					jpath = [lang] + jKey.split(".")
 					file = sheet.get(r, json_file_key, json_default_name)
-					if not file in jData:
-						jData[file] = {}
-					cur = jData[file]
-					for k in jpath[:-1]:
-						if not k in cur:
-							cur[k] = {}
-						if type(cur) is dict:
-							cur = cur[k]
-						else:
-							outlog.write("[Error] key conflict for JSON key {0} at sheet {1}\n".format(jKey, sheet.name))
-					if type(cur) is dict:
-						cur[jpath[-1]] = s
+					if file=="*":
+						commonJData.append((jpath, s, ("JSON", jKey, sheet.name)))
 					else:
-						outlog.write("[Error] key conflict for JSON key {0} at sheet {1}\n".format(jKey, sheet.name))
+						if not file in jData:
+							jData[file] = []
+						jData[file].append((jpath, s, ("JSON", jKey, sheet.name)))
 
 				if jsKey:
 					va = list(value)
@@ -468,18 +478,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 					file = lang
 					if not file in jsData:
 						jsData[file] = {}
-					cur = jsData[file]
-					for k in jpath[:-1]:
-						if not k in cur:
-							cur[k] = {}
-						if type(cur) is dict:
-							cur = cur[k]
-						else:
-							outlog.write("[Error] key conflict for JSONs key {0} at sheet {1}\n".format(jKey, sheet.name))
-					if type(cur) is dict:
-						cur[jpath[-1]] = s
-					else:
-						outlog.write("[Error] key conflict for JSONs key {0} at sheet {1}\n".format(jKey, sheet.name))
+					set_kv(jsData[file], jpath, s, outlog, ("JSONs", jKey, sheet.name))
 
 				if pKey:
 					va = list(value)
@@ -533,12 +532,18 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 		iF[fk].close()
 
 	for fn in jData:
+		data = {}
+		for path, value, ctx in commonJData:
+			set_kv(data, path, value, outlog, ctx)
+		for path, value, ctx in jData[fn]:
+			set_kv(data, path, value, outlog, ctx)
+
 		jPath = os.path.join(output_dir, "json/{}.json".format(fn))
 		d = os.path.dirname(jPath)
 		if not os.path.exists(d):
 			os.makedirs(d)
 		with open(jPath, "w", encoding="utf-8") as f:
-			json.dump(jData[fn], f, ensure_ascii=False, indent=4)
+			json.dump(data, f, ensure_ascii=False, indent=4)
 
 	for fn in jsData:
 		jPath = os.path.join(output_dir, "jsons/{}.json".format(fn))
@@ -603,7 +608,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 		if not os.path.exists(d):
 			os.makedirs(d)
 		with open(outfile, "wb") as f:
-		    f.write(ET.tostring(xliff, encoding="utf-8", xml_declaration=True))
+			f.write(ET.tostring(xliff, encoding="utf-8", xml_declaration=True))
 
 if __name__ == "__main__":
 	main_lang_key = "en"
