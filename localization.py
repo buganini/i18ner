@@ -101,8 +101,23 @@ py_file_key = "Python file"
 py_default_name = "i18n"
 xliff_key = "XLIFF"
 
-base_ios_locale_map = {"tw":"zh-Hant", "cn":"zh-Hans", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv"}
-android_locale_map = {"tw":"zh-rTW", "cn":"zh-rCN", "jp":"ja", "kr":"ko", "cz":"cs", "se":"sv", "pt-BR":"pt-rBR"}
+ios_locale_map = {
+	"tw":"zh-Hant",
+	"cn":"zh-Hans",
+	"jp":"ja",
+	"kr":"ko",
+	"cz":"cs",
+	"se":"sv",
+}
+android_locale_map = {
+	"tw":"zh-rTW",
+	"cn":"zh-rCN",
+	"jp":"ja",
+	"kr":"ko",
+	"cz":"cs",
+	"se":"sv",
+	"pt-BR":"pt-rBR",
+}
 
 ARGUMENT = r"\{\{(.*?)\}\}"
 BACKREF = r"%(.*?)%"
@@ -198,7 +213,7 @@ def set_kv(data, path, value, outlog, ctx):
 	else:
 		outlog.write("\x1b[1;33m[WARN] key conflict for {0} key {1} at sheet {2}\x1b[m\n".format(*ctx))
 
-def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], including_sheets = []):
+def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], including_sheets = [], args={}):
 	aF = {}
 	iF = {}
 	commonJData = []
@@ -212,8 +227,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 	jsKeys = set()
 	pKeys = set()
 	xlfKeys = set()
-	ios_locale_map = dict(base_ios_locale_map)
-	ios_locale_map[main_lang_key] = "Base"
+	ios_use_base = args.get("ios_use_base", False)
 
 	reader = Reader(input_path, including_sheets)
 
@@ -428,6 +442,10 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 						for i in range(0, len(va), 2):
 							va[i] = va[i].replace("%", "%%")
 
+					s = "".join(va)
+					if not s:
+						continue
+
 					file = sheet.get(r, ios_file_key, ios_default_name)
 
 					iLang = ios_locale_map.get(lang, lang)
@@ -439,14 +457,23 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 							os.makedirs(d)
 						iF[fk] = open(iPath, "w", encoding="utf-8")
 
-					s = "".join(va)
-					if not s:
-						continue
-
 					if lang == "en" and not is_en(s):
 						outlog.write("\x1b[1;33m[WARN] Non-English in EN string: iOS/{0}: {1}\x1b[m\n".format(iKey, s))
 
 					iF[fk].write("\"{0}\" = \"{1}\";\n".format(iKey, iescape(s)))
+
+					if lang==main_lang_key and ios_use_base:
+						iLang = "Base"
+						base_fk = (iLang, file)
+						if base_fk not in iF:
+							iPath = os.path.join(output_dir, "ios-strings/{0}.lproj/{1}.strings".format(iLang, file))
+							d = os.path.dirname(iPath)
+							if not os.path.exists(d):
+								os.makedirs(d)
+							iF[base_fk] = open(iPath, "w", encoding="utf-8")
+
+						iF[base_fk].write("\"{0}\" = \"{1}\";\n".format(iKey, iescape(s)))
+
 
 				if jKey:
 					va = list(value)
