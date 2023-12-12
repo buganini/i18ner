@@ -45,7 +45,7 @@ def android_escape(text, quote_wrapping_whitespaces=True):
 	text = text.replace('\\', '\\\\')
 	# This will add non intrusive real newlines to
 	# ones in translation improving readability of result
-	text = text.replace('\n', '\n\\n')
+	text = text.replace('\n', '\\n')
 	text = text.replace('\t', '\\t')
 	text = text.replace('\'', '\\\'')
 	text = text.replace('"', '\\"')
