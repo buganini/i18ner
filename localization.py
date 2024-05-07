@@ -278,16 +278,16 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 					va = re.split(BACKREF, token)
 					nva = [va[0]]
 
-					for i in range(1,len(va),2):
-						if va[i]:
-							if va[i] in ref_key_map:
-								nva.append(va[i])
-								nva.append(va[i+1])
+					for j in range(1,len(va),2):
+						if va[j]:
+							if va[j] in ref_key_map:
+								nva.append(va[j])
+								nva.append(va[j+1])
 							else:
 								outlog.write("\x1b[1;31m[WARN] Back reference {0} not found in language {1} at sheet {2}\x1b[m\n".format(ref, lang, sheet.name))
-								nva[-1] = nva[-1] + "%" + va[i] + "%" + va[i+1]
+								nva[-1] = nva[-1] + "%" + va[j] + "%" + va[j+1]
 						else:
-							nva[-1] = nva[-1] + "%" + va[i+1]
+							nva[-1] = nva[-1] + "%" + va[j+1]
 
 					va = nva
 
