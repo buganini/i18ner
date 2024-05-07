@@ -277,12 +277,17 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 				for i, token in list(reversed(list(enumerate(tokens))))[0::2]:
 					va = re.split(BACKREF, token)
 					nva = [va[0]]
+
 					for i in range(1,len(va),2):
 						if va[i]:
-							nva.append(va[i])
-							nva.append(va[i+1])
+							if va[i] in ref_key_map:
+								nva.append(va[i])
+								nva.append(va[i+1])
+							else:
+								nva[-1] = nva[-1] + "%" + va[i] + "%" + va[i+1]
 						else:
 							nva[-1] = nva[-1] + "%" + va[i+1]
+
 					va = nva
 
 					for j,ref in list(reversed(list(enumerate(va))))[1::2]:
