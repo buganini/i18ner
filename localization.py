@@ -284,6 +284,7 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 								nva.append(va[i])
 								nva.append(va[i+1])
 							else:
+								outlog.write("\x1b[1;31m[WARN] Back reference {0} not found in language {1} at sheet {2}\x1b[m\n".format(ref, lang, sheet.name))
 								nva[-1] = nva[-1] + "%" + va[i] + "%" + va[i+1]
 						else:
 							nva[-1] = nva[-1] + "%" + va[i+1]
@@ -291,20 +292,16 @@ def conv(input_path, output_dir, outlog, main_lang_key="en", lang_key = [], incl
 					va = nva
 
 					for j,ref in list(reversed(list(enumerate(va))))[1::2]:
-						if ref in ref_key_map:
-							va = va[:j] + [Null()] + sheet.get(ref_key_map[ref], lang) + [Null()] + va[j+1:]
+						va = va[:j] + [Null()] + sheet.get(ref_key_map[ref], lang) + [Null()] + va[j+1:]
 
-							for key,arg_key in ((android_key, android_arg_key), (ios_key, ios_arg_key)):
-								if not sheet.get(r, key):
-									continue
-								args = sheet.get(ref_key_map[ref], arg_key)
-								if args:
-									this_args = sheet.get(r, arg_key)
-									this_args = this_args[:i] + args + this_args[i+1:]
-									sheet.set(r, arg_key, this_args)
-						else:
-							outlog.write("\x1b[1;31m[ERROR] Back reference {0} not found in language {1} at sheet {2}\x1b[m\n".format(ref, lang, sheet.name))
-							return
+						for key,arg_key in ((android_key, android_arg_key), (ios_key, ios_arg_key)):
+							if not sheet.get(r, key):
+								continue
+							args = sheet.get(ref_key_map[ref], arg_key)
+							if args:
+								this_args = sheet.get(r, arg_key)
+								this_args = this_args[:i] + args + this_args[i+1:]
+								sheet.set(r, arg_key, this_args)
 					tokens = tokens[:i] + va + tokens[i+1:]
 				sheet.set(r, lang, tokens)
 
